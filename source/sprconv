@@ -1,0 +1,219 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+# imports
+import json
+import sys
+import struct
+from PIL import Image
+from spr import Spr
+from os.path import splitext
+from palettes import quake_palette
+
+# write sprite from json
+def sprite_from_json(filename):
+
+	# open json file
+	jsonfile = open(filename, "r")
+	jsonobj = json.load(jsonfile)
+
+	# error check
+	if jsonobj["version"] != 1 and jsonobj["version"] != 32:
+		print("error: version key should be SPR (1) or SPR32 (32)")
+		return
+
+	# talk to you
+	print("writing sprite {0}".format(jsonobj["filename"]))
+
+	# open sprite file
+	file = open(jsonobj["filename"], "wb")
+
+	# write header
+	file.write(bytes("IDSP".encode("ascii")))
+	file.write(struct.pack("<I", jsonobj["version"]))
+	file.write(struct.pack("<I", jsonobj["type"]))
+	file.write(struct.pack("<f", jsonobj["bounding_radius"]))
+	file.write(struct.pack("<I", jsonobj["size"][0]))
+	file.write(struct.pack("<I", jsonobj["size"][1]))
+	file.write(struct.pack("<I", len(jsonobj["frames"])))
+	file.write(struct.pack("<f", jsonobj["beam_length"]))
+	file.write(struct.pack("<I", jsonobj["sync_type"]))
+
+	# write frames
+	for f, frame in enumerate(jsonobj["frames"]):
+
+		# talk to you
+		print("writing sprite frame {0}".format(f))
+
+		# error checks
+		if frame["type"] == 0 and len(frame["subframes"]) > 1:
+			print("error: frame type is SINGLE (0), but there is not 1 subframe")
+			return
+		if frame["type"] == 1 and len(frame["subframes"]) < 2:
+			print("error: frame type is GROUP (1), but less than 2 subframes are specified")
+			return
+		if frame["type"] == 2 and len(frame["subframes"]) != 8:
+			print("error: frame type is ANGLED (2), but there are not 8 subframes")
+			return
+
+		# write type
+		file.write(struct.pack("<I", frame["type"]))
+
+		# if its grouped or angled
+		# write number of subframes and intervals
+		if frame["type"] > 0:
+			file.write(struct.pack("<I", len(frame["subframes"])))
+			for i in range(len(frame["subframes"])):
+				file.write(struct.pack("<f", frame["subframes"][i]["interval"]))
+
+		# write subframes
+		for subframe in frame["subframes"]:
+
+			# talk to you
+			print("writing sprite subframe {0}".format(subframe["filename"]))
+
+			# write frame data
+			file.write(struct.pack("<i", subframe["origin"][0]))
+			file.write(struct.pack("<i", subframe["origin"][1]))
+			file.write(struct.pack("<I", subframe["size"][0]))
+			file.write(struct.pack("<I", subframe["size"][1]))
+
+			# open image and get pixels
+			imagefile = Image.open(subframe["filename"])
+			imagepixels = imagefile.load()
+
+			# error checks
+			if jsonobj["version"] == 32 and imagefile.mode != "RGBA":
+				print("error: version is SPR32 (32), but \"{0}\" is not RGBA".format(image))
+				return
+			if jsonobj["version"] == 1 and imagefile.mode != "P":
+				print("error: version is SPR (1), but \"{0}\" is not P".format(image))
+				return
+
+			# write 32-bit pixels
+			if jsonobj["version"] == 32:
+				for y in range(imagefile.size[1]):
+					for x in range(imagefile.size[0]):
+						pixel = imagepixels[x, y]
+						file.write(struct.pack("<B", pixel[0]))
+						file.write(struct.pack("<B", pixel[1]))
+						file.write(struct.pack("<B", pixel[2]))
+						file.write(struct.pack("<B", pixel[3]))
+			elif jsonobj["version"] == 1:
+				for y in range(imagefile.size[1]):
+					for x in range(imagefile.size[0]):
+						pixel = imagepixels[x, y]
+						file.write(struct.pack("<B", pixel))
+
+			# close image
+			imagefile.close()
+
+	# close sprite file
+	file.close()
+
+	# close json file
+	jsonfile.close()
+
+# decompile sprite to json
+def json_from_sprite(filename):
+
+	# open sprite file
+	spritefile = Spr.from_file(filename)
+
+	# create sprite dict
+	sprite = {}
+
+	# append filename
+	sprite |= {"filename": filename}
+
+	# append version
+	sprite |= {"version": spritefile.version.value}
+	if spritefile.version == Spr.SprVersions.spr:
+		data = spritefile.data_spr
+	elif spritefile.version == Spr.SprVersions.spr32:
+		data = spritefile.data_spr32
+
+	# append type
+	sprite |= {"type": data.type.value}
+
+	# append size
+	sprite |= {"size": [data.size.x, data.size.y]}
+
+	# append other values
+	sprite |= {"bounding_radius": data.bounding_radius}
+	sprite |= {"beam_length": data.beam_length}
+	sprite |= {"sync_type": data.sync_type.value}
+
+	# create frames
+	jsonframes = []
+	for f, frame in enumerate(data.frames):
+		jsonframe = {}
+		jsonsubframes = []
+		jsonframe |= {"type": frame.type.value}
+
+		# create subframes
+		for s, subframe in enumerate(frame.subframes):
+
+			jsonsubframe = {}
+
+			# get filename and talk to you
+			image_filename = "{0}_{1}_{2}.{3}".format(splitext(filename)[0], f, s, "png")
+			print("writing frame {0}".format(image_filename))
+
+			jsonsubframe |= {"filename": image_filename}
+			jsonsubframe |= {"size": [subframe.size.x, subframe.size.y]}
+			jsonsubframe |= {"origin": [subframe.origin.x, subframe.origin.y]}
+
+			# write intervals
+			if frame.type == Spr.SprFrameType.group or frame.type == Spr.SprFrameType.angled:
+				jsonsubframe |= {"interval": frame.intervals[s]}
+			else:
+				jsonsubframe |= {"interval": 0.1}
+
+			# actually write it
+			if spritefile.version == Spr.SprVersions.spr32:
+				image = Image.frombuffer("RGBA", [subframe.size.x, subframe.size.y], subframe.pixels)
+				image.save(image_filename)
+			elif spritefile.version == Spr.SprVersions.spr:
+				image = Image.frombuffer("P", [subframe.size.x, subframe.size.y], subframe.pixels)
+				image.putpalette(quake_palette)
+				image.save(image_filename)
+
+			# add to json list
+			jsonsubframes.append(jsonsubframe)
+
+		# append subframes
+		jsonframe |= {"subframes": jsonsubframes}
+
+		jsonframes.append(jsonframe)
+
+	# append frames
+	sprite |= {"frames": jsonframes}
+
+	# write json file
+	output_filename = splitext(filename)[0] + ".json"
+	print("writing json file {0}".format(output_filename))
+	jsonfile = open(output_filename, "w", encoding="utf-8")
+	json.dump(sprite, jsonfile, ensure_ascii=False, indent=4)
+	jsonfile.close()
+
+	# close sprite file
+	spritefile.close()
+
+# main
+if __name__ == "__main__":
+
+	# get data
+	input_filename = sys.argv[1]
+	input_ext = splitext(input_filename)[1]
+
+	# talk to you
+	print("opening {0}".format(input_filename))
+
+	# decompile or compile?
+	if input_ext == ".json":
+		sprite_from_json(input_filename)
+	elif input_ext == ".spr" or input_ext == ".spr32":
+		json_from_sprite(input_filename)
+	else:
+		print("error: unrecognized file extension {0}".format(input_ext))
