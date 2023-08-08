@@ -75,6 +75,14 @@ json_from_sprite(sprite_filename)
 - I'm not sure what "beam_length" is used for in any version of Quake.
 - "interval" is the length of time between subframes in Group frames.
 
+## Todo:
+
+- Half-Life sprite generation
+- Replace "type" values with strings
+- Replace "version" value with a string
+- Calculate "beam_length" and "bounding_radius" if its not provided
+- Calculate size from image size, rather than allowing user to specify
+
 ## Runtime dependencies
 
 - PIL (`python -m pip install Pillow`)
