@@ -124,32 +124,32 @@ def json_from_sprite(filename):
 	sprite = {}
 
 	# append filename
-	sprite |= {"filename": filename}
+	sprite["filename"] = filename
 
 	# append version
-	sprite |= {"version": spritefile.version.value}
+	sprite["version"] = spritefile.version.value
 	if spritefile.version == Spr.SprVersions.spr:
 		data = spritefile.data_spr
 	elif spritefile.version == Spr.SprVersions.spr32:
 		data = spritefile.data_spr32
 
 	# append type
-	sprite |= {"type": data.type.value}
+	sprite["type"] = data.type.value
 
 	# append size
-	sprite |= {"size": [data.size.x, data.size.y]}
+	sprite["size"] = [data.size.x, data.size.y]
 
 	# append other values
-	sprite |= {"bounding_radius": data.bounding_radius}
-	sprite |= {"beam_length": data.beam_length}
-	sprite |= {"sync_type": data.sync_type.value}
+	sprite["bounding_radius"] = data.bounding_radius
+	sprite["beam_length"] = data.beam_length
+	sprite["sync_type"] = data.sync_type.value
 
 	# create frames
 	jsonframes = []
 	for f, frame in enumerate(data.frames):
 		jsonframe = {}
 		jsonsubframes = []
-		jsonframe |= {"type": frame.type.value}
+		jsonframe["type"] = frame.type.value
 
 		# create subframes
 		for s, subframe in enumerate(frame.subframes):
@@ -160,15 +160,15 @@ def json_from_sprite(filename):
 			image_filename = "{0}_{1}_{2}.{3}".format(splitext(filename)[0], f, s, "png")
 			print("writing frame {0}".format(image_filename))
 
-			jsonsubframe |= {"filename": image_filename}
-			jsonsubframe |= {"size": [subframe.size.x, subframe.size.y]}
-			jsonsubframe |= {"origin": [subframe.origin.x, subframe.origin.y]}
+			jsonsubframe["filename"] = image_filename
+			jsonsubframe["size"] = [subframe.size.x, subframe.size.y]
+			jsonsubframe["origin"] = [subframe.origin.x, subframe.origin.y]
 
 			# write intervals
 			if frame.type == Spr.SprFrameType.group or frame.type == Spr.SprFrameType.angled:
-				jsonsubframe |= {"interval": frame.intervals[s]}
+				jsonsubframe["interval"] = frame.intervals[s]
 			else:
-				jsonsubframe |= {"interval": 0.1}
+				jsonsubframe["interval"] = 0.1
 
 			# actually write it
 			if spritefile.version == Spr.SprVersions.spr32:
@@ -183,12 +183,12 @@ def json_from_sprite(filename):
 			jsonsubframes.append(jsonsubframe)
 
 		# append subframes
-		jsonframe |= {"subframes": jsonsubframes}
+		jsonframe["subframes"] = jsonsubframes
 
 		jsonframes.append(jsonframe)
 
 	# append frames
-	sprite |= {"frames": jsonframes}
+	sprite["frames"] = jsonframes
 
 	# write json file
 	output_filename = splitext(filename)[0] + ".json"
