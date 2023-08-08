@@ -40,7 +40,7 @@ Compile sprite: `sprconv sprite.json`
 - 1: Normal Quake. Input images must be paletted (8bpp).
 - 32: Darkplaces. Input images must be RGBA (32bpp).
 
-### Types:
+### Sprite types:
 
 - 0: Parallel upright
 - 1: Facing upright
