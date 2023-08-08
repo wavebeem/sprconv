@@ -2,12 +2,13 @@
 
 A python tool for decompiling and recompiling Quake sprites.
 
-Example usage:
+### Example usage:
 
 Decompile sprite: `sprconv sprite.spr`
+
 Compile sprite: `sprconv sprite.json`
 
-Example JSON script:
+### Example JSON script:
 
 ```json
 {
@@ -34,12 +35,12 @@ Example JSON script:
 }
 ```
 
-Versions:
+### Versions:
 
 - 1: Normal Quake. Input images must be paletted (8bpp).
 - 32: Darkplaces. Input images must be RGBA (32bpp).
 
-Types:
+### Types:
 
 - 0: Parallel upright
 - 1: Facing upright
@@ -47,18 +48,18 @@ Types:
 - 3: Oriented
 - 4: Parallel oriented
 
-Sync types:
+### Sync types:
 
 - 0: Synchronized
 - 1: Random
 
-Frame types:
+### Frame types:
 
 - 0: Single
 - 1: Group
 - 2: Angled (FTEQW only)
 
-Notes:
+### Notes:
 
 - "bounding_radius" is not used by most sourceports, so can safely be set to 0.
 - I'm not sure what "beam_length" is used for in any version of Quake.
