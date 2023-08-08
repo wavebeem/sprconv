@@ -8,6 +8,16 @@ Decompile sprite: `sprconv sprite.spr`
 
 Compile sprite: `sprconv sprite.json`
 
+Use in other scripts:
+
+```python
+from sprconv import sprite_from_json
+from sprconv import json_from_sprite
+
+sprite_from_json(json_filename)
+json_from_sprite(sprite_filename)
+```
+
 ### Example JSON script:
 
 ```json
