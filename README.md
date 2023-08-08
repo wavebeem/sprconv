@@ -75,6 +75,10 @@ json_from_sprite(sprite_filename)
 - I'm not sure what "beam_length" is used for in any version of Quake.
 - "interval" is the length of time between subframes in Group frames.
 
+## Runtime dependencies
+
+- PIL (`python -m pip install Pillow`)
+
 ## Thirdparty
 
 - [Kaitai Struct](https://kaitai.io/)
