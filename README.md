@@ -25,7 +25,6 @@ json_from_sprite(sprite_filename)
     "filename": "s_light.spr",
     "version": 1,
     "type": 2,
-    "size": [32, 32],
     "bounding_radius": 22.627416610717773,
     "beam_length": 0.0,
     "sync_type": 0,
@@ -35,7 +34,6 @@ json_from_sprite(sprite_filename)
             "subframes": [
                 {
                     "filename": "s_light_0_0.png",
-                    "size": [32, 32],
                     "origin": [-16, 16],
                     "interval": 0.1
                 }
@@ -81,7 +79,6 @@ json_from_sprite(sprite_filename)
 - Replace "type" values with strings
 - Replace "version" value with a string
 - Calculate "beam_length" and "bounding_radius" if its not provided
-- Calculate size from image size, rather than allowing user to specify
 
 ## Runtime dependencies
 

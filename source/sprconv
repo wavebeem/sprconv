@@ -33,8 +33,14 @@ def sprite_from_json(filename):
 	file.write(struct.pack("<I", jsonobj["version"]))
 	file.write(struct.pack("<I", jsonobj["type"]))
 	file.write(struct.pack("<f", jsonobj["bounding_radius"]))
-	file.write(struct.pack("<I", jsonobj["size"][0]))
-	file.write(struct.pack("<I", jsonobj["size"][1]))
+
+	# size hack
+	file_size_pos = file.tell()
+	size = [0, 0]
+	file.write(struct.pack("<I", size[0]))
+	file.write(struct.pack("<I", size[1]))
+
+	# the rest of the header
 	file.write(struct.pack("<I", len(jsonobj["frames"])))
 	file.write(struct.pack("<f", jsonobj["beam_length"]))
 	file.write(struct.pack("<I", jsonobj["sync_type"]))
@@ -72,15 +78,19 @@ def sprite_from_json(filename):
 			# talk to you
 			print("writing sprite subframe {0}".format(subframe["filename"]))
 
-			# write frame data
-			file.write(struct.pack("<i", subframe["origin"][0]))
-			file.write(struct.pack("<i", subframe["origin"][1]))
-			file.write(struct.pack("<I", subframe["size"][0]))
-			file.write(struct.pack("<I", subframe["size"][1]))
-
 			# open image and get pixels
 			imagefile = Image.open(subframe["filename"])
 			imagepixels = imagefile.load()
+
+			# write frame data
+			file.write(struct.pack("<i", subframe["origin"][0]))
+			file.write(struct.pack("<i", subframe["origin"][1]))
+			file.write(struct.pack("<I", imagefile.size[0]))
+			file.write(struct.pack("<I", imagefile.size[1]))
+
+			# yeah
+			if imagefile.size[0] > size[0]: size[0] = imagefile.size[0]
+			if imagefile.size[1] > size[1]: size[1] = imagefile.size[1]
 
 			# error checks
 			if jsonobj["version"] == 32 and imagefile.mode != "RGBA":
@@ -107,6 +117,11 @@ def sprite_from_json(filename):
 
 			# close image
 			imagefile.close()
+
+	# size hack
+	file.seek(file_size_pos, 0)
+	file.write(struct.pack("<I", size[0]))
+	file.write(struct.pack("<I", size[1]))
 
 	# close sprite file
 	file.close()
@@ -136,9 +151,6 @@ def json_from_sprite(filename):
 	# append type
 	sprite["type"] = data.type.value
 
-	# append size
-	sprite["size"] = [data.size.x, data.size.y]
-
 	# append other values
 	sprite["bounding_radius"] = data.bounding_radius
 	sprite["beam_length"] = data.beam_length
@@ -161,7 +173,6 @@ def json_from_sprite(filename):
 			print("writing frame {0}".format(image_filename))
 
 			jsonsubframe["filename"] = image_filename
-			jsonsubframe["size"] = [subframe.size.x, subframe.size.y]
 			jsonsubframe["origin"] = [subframe.origin.x, subframe.origin.y]
 
 			# write intervals
